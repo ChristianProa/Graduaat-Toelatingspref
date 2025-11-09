@@ -1,16 +1,6 @@
-
 import type { MultipleChoiceQuestion, TextFillQuestion, ReadingText } from './types';
 
 export const WOORDENSCHAT_QUESTIONS: MultipleChoiceQuestion[] = [
-  // Easy
-  { id: 'w1', type: 'multiple-choice', text: 'Blij', options: [{id: 'w1a', text: 'Vrolijk'}, {id: 'w1b', text: 'Boos'}, {id: 'w1c', text: 'Verdrietig'}, {id: 'w1d', text: 'Moe'}, {id: 'w1e', text: 'Snel'}] },
-  { id: 'w2', type: 'multiple-choice', text: 'Groot', options: [{id: 'w2a', text: 'Klein'}, {id: 'w2b', text: 'Enorm'}, {id: 'w2c', text: 'Zwaar'}, {id: 'w2d', text: 'Licht'}, {id: 'w2e', text: 'Mooi'}] },
-  { id: 'w3', type: 'multiple-choice', text: 'Praten', options: [{id: 'w3a', text: 'Zwijgen'}, {id: 'w3b', text: 'Luisteren'}, {id: 'w3c', text: 'Spreken'}, {id: 'w3d', text: 'Zien'}, {id: 'w3e', text: 'Lopen'}] },
-  { id: 'w4', type: 'multiple-choice', text: 'Snel', options: [{id: 'w4a', text: 'Langzaam'}, {id: 'w4b', text: 'Vlug'}, {id: 'w4c', text: 'Sterk'}, {id: 'w4d', text: 'Zwak'}, {id: 'w4e', text: 'Hoog'}] },
-  { id: 'w5', type: 'multiple-choice', text: 'Moeilijk', options: [{id: 'w5a', text: 'Lastig'}, {id: 'w5b', text: 'Makkelijk'}, {id: 'w5c', text: 'Simpel'}, {id: 'w5d', text: 'Duidelijk'}, {id: 'w5e', text: 'Zacht'}] },
-  { id: 'w6', type: 'multiple-choice', text: 'Idee', options: [{id: 'w6a', text: 'Probleem'}, {id: 'w6b', text: 'Vraag'}, {id: 'w6c', text: 'Gedachte'}, {id: 'w6d', text: 'Feit'}, {id: 'w6e', text: 'Antwoord'}] },
-  { id: 'w7', type: 'multiple-choice', text: 'Huis', options: [{id: 'w7a', text: 'School'}, {id: 'w7b', text: 'Woning'}, {id: 'w7c', text: 'Auto'}, {id: 'w7d', text: 'Winkel'}, {id: 'w7e', text: 'Park'}] },
-  { id: 'w8', type: 'multiple-choice', text: 'Kijken', options: [{id: 'w8a', text: 'Zien'}, {id: 'w8b', text: 'Horen'}, {id: 'w8c', text: 'Voelen'}, {id: 'w8d', text: 'Ruiken'}, {id: 'w8e', text: 'Proeven'}] },
   // Medium
   { id: 'w9', type: 'multiple-choice', text: 'Relevant', options: [{id: 'w9a', text: 'Onbelangrijk'}, {id: 'w9b', text: 'Toepasselijk'}, {id: 'w9c', text: 'Verouderd'}, {id: 'w9d', text: 'Nieuw'}, {id: 'w9e', text: 'Complex'}] },
   { id: 'w10', type: 'multiple-choice', text: 'Analyse', options: [{id: 'w10a', text: 'Samenvatting'}, {id: 'w10b', text: 'Conclusie'}, {id: 'w10c', text: 'Onderzoek'}, {id: 'w10d', text: 'Mening'}, {id: 'w10e', text: 'Gok'}] },
@@ -73,11 +63,6 @@ export const BEGRIJPEND_LEZEN_TEXTS: ReadingText[] = [
 // For brevity, this simulation uses 6 questions across 2 texts. The structure is representative.
 
 export const REKENEN_QUESTIONS: MultipleChoiceQuestion[] = [
-    // Easy
-    { id: 'r1', type: 'multiple-choice', text: '12 x 8 = ?', options: [{id: 'r1a', text: '84'}, {id: 'r1b', text: '96'}, {id: 'r1c', text: '108'}, {id: 'r1d', text: '92'}] },
-    { id: 'r2', type: 'multiple-choice', text: '144 : 12 = ?', options: [{id: 'r2a', text: '10'}, {id: 'r2b', text: '11'}, {id: 'r2c', text: '12'}, {id: 'r2d', text: '13'}] },
-    { id: 'r3', type: 'multiple-choice', text: '25% van 200 = ?', options: [{id: 'r3a', text: '25'}, {id: 'r3b', text: '50'}, {id: 'r3c', text: '75'}, {id: 'r3d', text: '100'}] },
-    { id: 'r4', type: 'multiple-choice', text: '3/5 als decimaal getal is:', options: [{id: 'r4a', text: '0.3'}, {id: 'r4b', text: '0.5'}, {id: 'r4c', text: '0.6'}, {id: 'r4d', text: '3.5'}] },
     // Medium
     { id: 'r5', type: 'multiple-choice', text: 'Als ? : 7 = 9, wat is dan ?', options: [{id: 'r5a', text: '56'}, {id: 'r5b', text: '63'}, {id: 'r5c', text: '72'}, {id: 'r5d', text: '81'}] },
     { id: 'r6', type: 'multiple-choice', text: 'Wat is 150% van 30?', options: [{id: 'r6a', text: '20'}, {id: 'r6b', text: '30'}, {id: 'r6c', text: '45'}, {id: 'r6d', text: '180'}] },
@@ -87,13 +72,9 @@ export const REKENEN_QUESTIONS: MultipleChoiceQuestion[] = [
     { id: 'r9', type: 'multiple-choice', text: '150 is 20% van welk getal?', options: [{id: 'r9a', text: '30'}, {id: 'r9b', text: '300'}, {id: 'r9c', text: '750'}, {id: 'r9d', text: '1500'}] },
     { id: 'r10', type: 'multiple-choice', text: 'Een auto rijdt 300 km in 2.5 uur. Wat is de gemiddelde snelheid in km/u?', options: [{id: 'r10a', text: '100 km/u'}, {id: 'r10b', text: '120 km/u'}, {id: 'r10c', text: '125 km/u'}, {id: 'r10d', text: '750 km/u'}] },
 ];
-// 32 questions required. 10 are defined. For brevity, this simulation uses 10.
+// 32 questions required. 6 are defined. For brevity, this simulation uses 6.
 
 export const NUMERIEK_REDENEREN_QUESTIONS: TextFillQuestion[] = [
-    // Easy
-    { id: 'nr1', type: 'text-fill', text: '3, 6, 9, 12, 15, ?, ?', placeholders: 2 },
-    { id: 'nr2', type: 'text-fill', text: '50, 45, 40, 35, 30, ?, ?', placeholders: 2 },
-    { id: 'nr3', type: 'text-fill', text: '2, 4, 8, 16, 32, ?, ?', placeholders: 2 },
     // Medium
     { id: 'nr4', type: 'text-fill', text: '1, 1, 2, 2, 3, 3, ?, ?', placeholders: 2 },
     { id: 'nr5', type: 'text-fill', text: '9, 12, 11, 14, 13, ?, ?', placeholders: 2 },
@@ -103,4 +84,21 @@ export const NUMERIEK_REDENEREN_QUESTIONS: TextFillQuestion[] = [
     { id: 'nr8', type: 'text-fill', text: '81, 27, 9, 3, ?, ?', placeholders: 2 },
     { id: 'nr9', type: 'text-fill', text: '2, 2, 4, 12, 48, ?, ?', placeholders: 2 },
 ];
-// 20 questions required. 9 are defined. For brevity, this simulation uses 9.
+// 20 questions required. 6 are defined. For brevity, this simulation uses 6.
+
+export const CORRECT_ANSWERS: Record<string, string | string[]> = {
+  // Woordenschat
+  w9: 'Toepasselijk', w10: 'Onderzoek', w11: 'Buigzaam', w12: 'Informatie uitwisselen', w13: 'Uitkomst', w14: 'Doeltreffend',
+  w15: 'Onderdeel', w16: 'Uitkiezen', w17: 'Vaak', w18: 'Controle', w19: 'Andere mogelijkheid', w20: 'Onmisbaar',
+  w21: 'Dubbelzinnig', w22: 'Overeenstemming', w23: 'Praktisch', w24: 'Uitvoeren', w25: 'Samenhang', w26: 'Rechtmatig',
+  w27: 'Vooruitlopen op', w28: 'Schijnbare tegenstelling', w29: 'Winstgevend', w30: 'Onbeduidend', w31: 'Onafhankelijk',
+  w32: 'Onlosmakelijk verbonden', w33: 'Initiatief nemend', w34: 'Overeenkomstig met',
+  // Begrijpend Lezen
+  blq1: 'Het bestrijden van klimaatverandering', blq2: 'Dat duurzame energie niet constant beschikbaar is', blq3: 'Gebruik van kernenergie',
+  blq4: 'Het schrijven van een e-mail', blq5: 'Efficiëntie in de gezondheidszorg', blq6: 'Dat AI zowel kansen als ethische vragen met zich meebrengt',
+  // Rekenen
+  r5: '63', r6: '45', r7: '€64', r8: '3/4', r9: '750', r10: '120 km/u',
+  // Numeriek Redeneren
+  nr4: ['4', '4'], nr5: ['16', '15'],
+  nr6: ['36', '49'], nr7: ['21', '34'], nr8: ['1', '1/3'], nr9: ['240', '1440'],
+};

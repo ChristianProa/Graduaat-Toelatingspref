@@ -1,13 +1,21 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Section, type Answers, type MultipleChoiceQuestion, type TextFillQuestion, type ReadingText } from './types';
-import { WOORDENSCHAT_QUESTIONS, BEGRIJPEND_LEZEN_TEXTS, REKENEN_QUESTIONS, NUMERIEK_REDENEREN_QUESTIONS } from './constants';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Section, type Answers, type MultipleChoiceQuestion, type TextFillQuestion, type ReadingText, type Question } from './types';
+import { WOORDENSCHAT_QUESTIONS, BEGRIJPEND_LEZEN_TEXTS, REKENEN_QUESTIONS, NUMERIEK_REDENEREN_QUESTIONS, CORRECT_ANSWERS } from './constants';
 
 const SECTION_CONFIG = {
-  [Section.Woordenschat]: { time: 15 * 60, next: Section.BegrijpendLezen, questions: WOORDENSCHAT_QUESTIONS.length },
-  [Section.BegrijpendLezen]: { time: 35 * 60, next: Section.Rekenen, questions: BEGRIJPEND_LEZEN_TEXTS.reduce((acc, t) => acc + t.questions.length, 0) },
-  [Section.Rekenen]: { time: 30 * 60, next: Section.NumeriekRedeneren, questions: REKENEN_QUESTIONS.length },
-  [Section.NumeriekRedeneren]: { time: 20 * 60, next: Section.Resultaat, questions: NUMERIEK_REDENEREN_QUESTIONS.length },
+  [Section.Woordenschat]: { time: 15 * 60, next: Section.BegrijpendLezen, questions: WOORDENSCHAT_QUESTIONS },
+  [Section.BegrijpendLezen]: { time: 35 * 60, next: Section.Rekenen, questions: BEGRIJPEND_LEZEN_TEXTS.flatMap(t => t.questions) },
+  [Section.Rekenen]: { time: 30 * 60, next: Section.NumeriekRedeneren, questions: REKENEN_QUESTIONS },
+  [Section.NumeriekRedeneren]: { time: 20 * 60, next: Section.Resultaat, questions: NUMERIEK_REDENEREN_QUESTIONS },
+};
+
+type CalculatedResults = {
+  totalCorrect: number;
+  totalQuestions: number;
+  scorePercentage: number;
+  passed: boolean;
+  sectionScores: Record<string, { correct: number; total: number }>;
 };
 
 // --- HELPER COMPONENTS (defined outside App to prevent re-renders) ---
@@ -137,12 +145,102 @@ const NumeriekRedenerenComponent: React.FC<SectionProps> = ({ answers, onAnswerC
 };
 
 
+const ResultaatComponent: React.FC<{ results: CalculatedResults | null; answers: Answers; restartQuiz: () => void }> = ({ results, answers, restartQuiz }) => {
+  const [showReview, setShowReview] = useState(false);
+
+  const allQuestions = useMemo(() => [
+    ...WOORDENSCHAT_QUESTIONS, 
+    ...BEGRIJPEND_LEZEN_TEXTS.flatMap(t => t.questions), 
+    ...REKENEN_QUESTIONS, 
+    ...NUMERIEK_REDENEREN_QUESTIONS
+  ], []);
+
+  if (!results) {
+    return (
+      <div className="text-center bg-white p-10 rounded-xl shadow-lg">
+        <h1 className="text-3xl font-bold mb-4 text-slate-800">Resultaten worden berekend...</h1>
+      </div>
+    );
+  }
+
+  const { passed, scorePercentage, totalCorrect, totalQuestions, sectionScores } = results;
+
+  return (
+    <div className="bg-white p-6 sm:p-10 rounded-xl shadow-lg w-full">
+      <h1 className={`text-3xl sm:text-4xl font-bold mb-2 text-center ${passed ? 'text-green-600' : 'text-red-600'}`}>
+        {passed ? 'Gefeliciteerd, u bent geslaagd!' : 'Helaas, niet geslaagd'}
+      </h1>
+      <p className="text-center text-slate-600 text-lg mb-8">
+        U behaalde een score van <span className="font-bold">{scorePercentage}%</span> ({totalCorrect} / {totalQuestions} correct)
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* FIX: Replaced Object.entries with Object.keys for better type inference on the 'score' object, resolving compiler errors. */}
+        {Object.keys(sectionScores).map((sectionName) => {
+          const score = sectionScores[sectionName];
+          return (
+            <div key={sectionName} className="border rounded-lg p-4 bg-slate-50">
+              <h3 className="font-bold text-slate-800">{sectionName}</h3>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-slate-600">{score.correct} / {score.total} correct</p>
+                <p className="font-semibold text-blue-600">{Math.round((score.correct / score.total) * 100)}%</p>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2.5 mt-2">
+                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${(score.correct / score.total) * 100}%` }}></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      <div className="text-center mb-8">
+        <button onClick={() => setShowReview(!showReview)} className="text-blue-600 font-semibold hover:underline">
+          {showReview ? 'Verberg antwoorden' : 'Bekijk antwoorden'}
+        </button>
+      </div>
+
+      {showReview && (
+        <div className="space-y-4 border-t pt-6">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4">Antwoordenoverzicht</h2>
+          {allQuestions.map((q, index) => {
+            const userAnswer = answers[q.id];
+            const correctAnswer = CORRECT_ANSWERS[q.id];
+            const isCorrect = JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
+
+            return (
+              <div key={q.id} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
+                <p className="font-semibold text-slate-700">{index + 1}. {q.text}</p>
+                <p className={`mt-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                  <span className="font-bold">Uw antwoord:</span> {Array.isArray(userAnswer) ? userAnswer.join(', ') : userAnswer || 'Niet beantwoord'}
+                </p>
+                {!isCorrect && (
+                   <p className="mt-1 text-slate-600">
+                    <span className="font-bold">Correct antwoord:</span> {Array.isArray(correctAnswer) ? correctAnswer.join(', ') : correctAnswer}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-10 text-center">
+        <button onClick={restartQuiz} className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+          Opnieuw Beginnen
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
 // --- MAIN APP COMPONENT ---
 
 function App() {
   const [currentSection, setCurrentSection] = useState<Section>(Section.Intro);
   const [answers, setAnswers] = useState<Answers>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [results, setResults] = useState<CalculatedResults | null>(null);
   
   const handleNextSection = useCallback(() => {
     if(currentSection === Section.Intro) {
@@ -155,7 +253,41 @@ function App() {
     }
   }, [currentSection]);
 
+  const calculateResults = useCallback(() => {
+      const sectionScores: Record<string, { correct: number; total: number }> = {};
+      let totalCorrect = 0;
+
+      Object.entries(SECTION_CONFIG).forEach(([sectionName, config]) => {
+          let correctInSection = 0;
+          const questions = config.questions as Question[];
+          questions.forEach(q => {
+              const userAnswer = answers[q.id];
+              const correctAnswer = CORRECT_ANSWERS[q.id];
+              if (JSON.stringify(userAnswer) === JSON.stringify(correctAnswer)) {
+                  correctInSection++;
+              }
+          });
+          sectionScores[sectionName] = { correct: correctInSection, total: questions.length };
+          totalCorrect += correctInSection;
+      });
+
+      const totalQuestions = Object.values(sectionScores).reduce((sum, s) => sum + s.total, 0);
+      const scorePercentage = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+      
+      setResults({
+          totalCorrect,
+          totalQuestions,
+          scorePercentage,
+          passed: scorePercentage >= 55,
+          sectionScores,
+      });
+  }, [answers]);
+
   useEffect(() => {
+    if (currentSection === Section.Resultaat && !results) {
+        calculateResults();
+    }
+    
     if (currentSection !== Section.Intro && currentSection !== Section.Resultaat) {
       const config = SECTION_CONFIG[currentSection as keyof typeof SECTION_CONFIG];
       setTimeLeft(config.time);
@@ -173,12 +305,17 @@ function App() {
 
       return () => clearInterval(timer);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSection, handleNextSection]);
+  }, [currentSection, handleNextSection, calculateResults, results]);
 
   const handleAnswerChange = (questionId: string, answer: string | string[]) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
+  
+  const restartQuiz = () => {
+      setAnswers({});
+      setResults(null);
+      setCurrentSection(Section.Intro);
+  }
 
   const renderSection = () => {
     switch (currentSection) {
@@ -202,15 +339,7 @@ function App() {
       case Section.NumeriekRedeneren:
         return <NumeriekRedenerenComponent answers={answers} onAnswerChange={handleAnswerChange} />;
       case Section.Resultaat:
-        return (
-          <div className="text-center bg-white p-10 rounded-xl shadow-lg">
-            <h1 className="text-3xl font-bold mb-4 text-green-600">Examen Voltooid!</h1>
-            <p className="max-w-2xl mx-auto mb-8 text-slate-700">U heeft de simulatietoets afgerond. Uw antwoorden zijn opgeslagen. In een echte applicatie zou u nu uw resultaten kunnen bekijken.</p>
-             <button onClick={() => { setCurrentSection(Section.Intro); setAnswers({}); }} className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
-              Opnieuw Beginnen
-            </button>
-          </div>
-        );
+        return <ResultaatComponent results={results} answers={answers} restartQuiz={restartQuiz} />;
       default:
         return null;
     }
@@ -226,7 +355,7 @@ function App() {
           <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm p-4 mb-6 rounded-xl shadow-md flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-blue-800">{currentSection}</h1>
-              <p className="text-sm text-slate-500">{config?.questions} vragen</p>
+              <p className="text-sm text-slate-500">{config?.questions.length} vragen</p>
             </div>
             <Timer timeLeft={timeLeft} />
           </header>
