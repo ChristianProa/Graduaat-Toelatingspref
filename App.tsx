@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Section, type Answers, type MultipleChoiceQuestion, type TextFillQuestion, type ReadingText, type Question } from './types';
-import { WOORDENSCHAT_QUESTIONS, BEGRIJPEND_LEZEN_TEXTS, REKENEN_QUESTIONS, NUMERIEK_REDENEREN_QUESTIONS, CORRECT_ANSWERS } from './constants';
+import { WOORDENSCHAT_QUESTIONS, BEGRIJPEND_LEZEN_TEXTS, REKENEN_QUESTIONS, NUMERIEK_REDENEREN_QUESTIONS, CORRECT_ANSWERS, EXPLANATIONS } from './constants';
 
 const SECTION_CONFIG = {
   [Section.Woordenschat]: { time: 15 * 60, next: Section.BegrijpendLezen, questions: WOORDENSCHAT_QUESTIONS },
@@ -9,6 +9,14 @@ const SECTION_CONFIG = {
   [Section.Rekenen]: { time: 30 * 60, next: Section.NumeriekRedeneren, questions: REKENEN_QUESTIONS },
   [Section.NumeriekRedeneren]: { time: 20 * 60, next: Section.Resultaat, questions: NUMERIEK_REDENEREN_QUESTIONS },
 };
+
+const QUESTIONS_BY_SECTION = {
+    [Section.Woordenschat]: WOORDENSCHAT_QUESTIONS,
+    [Section.BegrijpendLezen]: BEGRIJPEND_LEZEN_TEXTS.flatMap(t => t.questions),
+    [Section.Rekenen]: REKENEN_QUESTIONS,
+    [Section.NumeriekRedeneren]: NUMERIEK_REDENEREN_QUESTIONS,
+};
+
 
 type CalculatedResults = {
   totalCorrect: number;
@@ -146,14 +154,12 @@ const NumeriekRedenerenComponent: React.FC<SectionProps> = ({ answers, onAnswerC
 
 
 const ResultaatComponent: React.FC<{ results: CalculatedResults | null; answers: Answers; restartQuiz: () => void }> = ({ results, answers, restartQuiz }) => {
-  const [showReview, setShowReview] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
 
-  const allQuestions = useMemo(() => [
-    ...WOORDENSCHAT_QUESTIONS, 
-    ...BEGRIJPEND_LEZEN_TEXTS.flatMap(t => t.questions), 
-    ...REKENEN_QUESTIONS, 
-    ...NUMERIEK_REDENEREN_QUESTIONS
-  ], []);
+  useEffect(() => {
+    // Scroll to top when the section view changes to ensure the user sees the content from the start.
+    window.scrollTo(0, 0);
+  }, [selectedSection]);
 
   if (!results) {
     return (
@@ -164,63 +170,126 @@ const ResultaatComponent: React.FC<{ results: CalculatedResults | null; answers:
   }
 
   const { passed, scorePercentage, totalCorrect, totalQuestions, sectionScores } = results;
+  const sectionsForReview = Object.keys(QUESTIONS_BY_SECTION) as Section[];
+  
+  const questionsToReview = selectedSection ? QUESTIONS_BY_SECTION[selectedSection] : [];
+
+  const renderReviewContent = () => (
+    <div className="space-y-4">
+      {questionsToReview.map((q, index) => {
+        const userAnswer = answers[q.id];
+        const correctAnswer = CORRECT_ANSWERS[q.id];
+        const isCorrect = JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
+        const explanation = EXPLANATIONS[q.id];
+
+        return (
+          <div key={q.id} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
+            <p className="font-semibold text-slate-700">{index + 1}. {q.text}</p>
+            <p className={`mt-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+              <span className="font-bold">Uw antwoord:</span> {Array.isArray(userAnswer) ? userAnswer.join(', ') : userAnswer || 'Niet beantwoord'}
+            </p>
+            {!isCorrect && (
+              <>
+                <p className="mt-1 text-slate-800">
+                  <span className="font-bold">Correct antwoord:</span> {Array.isArray(correctAnswer) ? correctAnswer.join(', ') : correctAnswer}
+                </p>
+                {explanation && (
+                  <div className="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
+                    <h4 className="font-bold text-yellow-800">Uitleg:</h4>
+                    <p className="text-slate-700 whitespace-pre-wrap">{explanation}</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="bg-white p-6 sm:p-10 rounded-xl shadow-lg w-full">
-      <h1 className={`text-3xl sm:text-4xl font-bold mb-2 text-center ${passed ? 'text-green-600' : 'text-red-600'}`}>
-        {passed ? 'Gefeliciteerd, u bent geslaagd!' : 'Helaas, niet geslaagd'}
-      </h1>
-      <p className="text-center text-slate-600 text-lg mb-8">
-        U behaalde een score van <span className="font-bold">{scorePercentage}%</span> ({totalCorrect} / {totalQuestions} correct)
-      </p>
+      {!selectedSection ? (
+        <>
+          <h1 className={`text-3xl sm:text-4xl font-bold mb-2 text-center ${passed ? 'text-green-600' : 'text-red-600'}`}>
+            {passed ? 'Gefeliciteerd, u bent geslaagd!' : 'Helaas, niet geslaagd'}
+          </h1>
+          <p className="text-center text-slate-600 text-lg mb-8">
+            U behaalde een score van <span className="font-bold">{scorePercentage}%</span> ({totalCorrect} / {totalQuestions} correct)
+          </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* FIX: Replaced Object.entries with Object.keys for better type inference on the 'score' object, resolving compiler errors. */}
-        {Object.keys(sectionScores).map((sectionName) => {
-          const score = sectionScores[sectionName];
-          return (
-            <div key={sectionName} className="border rounded-lg p-4 bg-slate-50">
-              <h3 className="font-bold text-slate-800">{sectionName}</h3>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-slate-600">{score.correct} / {score.total} correct</p>
-                <p className="font-semibold text-blue-600">{Math.round((score.correct / score.total) * 100)}%</p>
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2.5 mt-2">
-                <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${(score.correct / score.total) * 100}%` }}></div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {Object.keys(sectionScores).map((sectionName) => {
+              const score = sectionScores[sectionName as keyof typeof sectionScores];
+              return (
+                <div key={sectionName} className="border rounded-lg p-4 bg-slate-50">
+                  <h3 className="font-bold text-slate-800">{sectionName}</h3>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-slate-600">{score.correct} / {score.total} correct</p>
+                    <p className="font-semibold text-blue-600">{Math.round((score.correct / score.total) * 100)}%</p>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2.5 mt-2">
+                    <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${(score.correct / score.total) * 100}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="border-t pt-6 text-center">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">Antwoordenoverzicht</h2>
+            <p className="text-slate-600 mb-4">Kies een sectie om uw antwoorden te bekijken.</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {sectionsForReview.map(section => (
+                <button 
+                  key={section} 
+                  onClick={() => setSelectedSection(section)}
+                  className={`font-semibold py-2 px-4 rounded-lg transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300`}
+                >
+                  {section}
+                </button>
+              ))}
             </div>
-          );
-        })}
-      </div>
-      
-      <div className="text-center mb-8">
-        <button onClick={() => setShowReview(!showReview)} className="text-blue-600 font-semibold hover:underline">
-          {showReview ? 'Verberg antwoorden' : 'Bekijk antwoorden'}
-        </button>
-      </div>
-
-      {showReview && (
-        <div className="space-y-4 border-t pt-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">Antwoordenoverzicht</h2>
-          {allQuestions.map((q, index) => {
-            const userAnswer = answers[q.id];
-            const correctAnswer = CORRECT_ANSWERS[q.id];
-            const isCorrect = JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
-
-            return (
-              <div key={q.id} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
-                <p className="font-semibold text-slate-700">{index + 1}. {q.text}</p>
-                <p className={`mt-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                  <span className="font-bold">Uw antwoord:</span> {Array.isArray(userAnswer) ? userAnswer.join(', ') : userAnswer || 'Niet beantwoord'}
-                </p>
-                {!isCorrect && (
-                   <p className="mt-1 text-slate-600">
-                    <span className="font-bold">Correct antwoord:</span> {Array.isArray(correctAnswer) ? correctAnswer.join(', ') : correctAnswer}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col md:flex-row gap-8">
+          <nav className="md:w-64" aria-label="Sectie Navigatie">
+            <div className="sticky top-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-3 px-2">Navigeer</h3>
+              <ul className="space-y-1">
+                <li>
+                  <button 
+                    onClick={() => setSelectedSection(null)}
+                    className="w-full flex items-center gap-3 text-left font-semibold py-2 px-4 rounded-lg transition-colors bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 10l1.293-1.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>Overzicht</span>
+                  </button>
+                </li>
+                 <li className="pt-2">
+                  <hr className="mb-2"/>
+                 </li>
+                {sectionsForReview.map(section => (
+                  <li key={section}>
+                    <button 
+                      onClick={() => setSelectedSection(section)}
+                      className={`w-full text-left font-semibold py-2 px-4 rounded-lg transition-colors ${selectedSection === section ? 'bg-blue-600 text-white' : 'hover:bg-blue-100 text-slate-700'}`}
+                    >
+                      {section}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+          
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">Details: {selectedSection}</h2>
+            {renderReviewContent()}
+          </div>
         </div>
       )}
 
@@ -350,7 +419,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-5xl mx-auto">
+      <div className="w-full max-w-6xl mx-auto">
         {isTestActive && (
           <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm p-4 mb-6 rounded-xl shadow-md flex justify-between items-center">
             <div>
@@ -361,7 +430,13 @@ function App() {
           </header>
         )}
         
-        <main className={`${!isTestActive ? 'flex items-center justify-center h-[80vh]' : 'bg-slate-50 p-6 rounded-xl shadow-inner'}`}>
+        <main className={`${
+          currentSection === Section.Intro
+            ? 'flex items-center justify-center h-[80vh]'
+            : isTestActive
+            ? 'bg-slate-50 p-6 rounded-xl shadow-inner'
+            : ''
+        }`}>
           {renderSection()}
         </main>
         
