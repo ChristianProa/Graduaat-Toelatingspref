@@ -119,11 +119,20 @@ const RekenenComponent: React.FC<SectionProps> = ({ answers, onAnswerChange }) =
 );
 
 const NumeriekRedenerenComponent: React.FC<SectionProps> = ({ answers, onAnswerChange }) => {
-  const handleInputChange = (questionId: string, index: number, value: string) => {
-    const currentAnswers = (answers[questionId] as string[]) || [];
-    const newAnswers = [...currentAnswers];
-    newAnswers[index] = value;
-    onAnswerChange(questionId, newAnswers);
+  const handleInputChange = (questionId: string, index: number, value: string, placeholders: number) => {
+    // Ensure we retrieve an array, and if it doesn't exist, initialize it with empty strings matching the placeholders
+    const existingAnswer = answers[questionId];
+    const currentAnswers = Array.isArray(existingAnswer) 
+        ? [...existingAnswer] 
+        : Array(placeholders).fill('');
+    
+    // Guard against existing arrays that might be shorter than placeholders (legacy data)
+    while(currentAnswers.length < placeholders) {
+        currentAnswers.push('');
+    }
+
+    currentAnswers[index] = value;
+    onAnswerChange(questionId, currentAnswers);
   };
 
   return (
@@ -141,7 +150,7 @@ const NumeriekRedenerenComponent: React.FC<SectionProps> = ({ answers, onAnswerC
                   type="text"
                   className="w-16 p-2 border rounded-md text-center"
                   value={((answers[q.id] as string[]) || [])[i] || ''}
-                  onChange={(e) => handleInputChange(q.id, i, e.target.value)}
+                  onChange={(e) => handleInputChange(q.id, i, e.target.value, q.placeholders)}
                 />
               ))}
             </div>
@@ -181,12 +190,24 @@ const ResultaatComponent: React.FC<{ results: CalculatedResults | null; answers:
         const correctAnswer = CORRECT_ANSWERS[q.id];
         const isCorrect = JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
         const explanation = EXPLANATIONS[q.id];
+        
+        // Check if there is any actual content in the answer (not just empty strings in an array)
+        const hasAnswer = Array.isArray(userAnswer) 
+            ? userAnswer.some(a => a && a.trim() !== '') 
+            : userAnswer && userAnswer.trim() !== '';
+
+        const formatAnswer = (ans: string | string[]) => {
+             if (Array.isArray(ans)) {
+                 return ans.map(a => a || '-').join(', ');
+             }
+             return ans;
+        }
 
         return (
           <div key={q.id} className={`p-4 rounded-lg border-l-4 ${isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
             <p className="font-semibold text-slate-700">{index + 1}. {q.text}</p>
             <p className={`mt-2 ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-              <span className="font-bold">Uw antwoord:</span> {Array.isArray(userAnswer) ? userAnswer.join(', ') : userAnswer || 'Niet beantwoord'}
+              <span className="font-bold">Uw antwoord:</span> {hasAnswer ? formatAnswer(userAnswer) : 'Niet beantwoord'}
             </p>
             {!isCorrect && (
               <>
